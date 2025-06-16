@@ -1,0 +1,27 @@
+{
+  "name": "cube-slackin-fix",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Server-side Slack invite redirect with expiration handling",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'No build needed'",
+    "start": "vercel dev --listen 3000",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:ui": "vitest --ui"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vercel/node": "^3.0.0",
+    "@vitest/ui": "^3.2.3",
+    "typescript": "^5.0.0",
+    "vercel": "^33.0.0",
+    "vitest": "^3.2.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

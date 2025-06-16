@@ -1,4 +1,12 @@
 {
+  "buildCommand": "echo 'No build needed'",
+  "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/api/redirect"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
