@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Slack Invite Redirect Service
 
-## Getting Started
+A simple redirect service for Slack invitation links with an admin panel.
 
-First, run the development server:
+## Features
+
+- 🚀 Instant redirect on the main page
+- 🛡️ Admin panel for managing links
+- ⏰ 30-day TTL for each link
+- 💾 Simple JSON file storage
+- 🎨 Modern UI with Tailwind CSS
+
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# Install dependencies
+pnpm install
+
+# Start in development mode
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Main Page
+- Automatically redirects to the active invitation link
+- Shows a message if the link is missing or expired
 
-## Learn More
+### Admin Panel `/admin`
+- View current link and its status
+- Add new links
+- Display link lifetime (30 days)
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+├── app/
+│   ├── page.tsx              # Main page with redirect
+│   ├── admin/
+│   │   └── page.tsx          # Admin panel
+│   └── api/
+│       └── invite/
+│           └── route.ts      # API for working with links
+├── data/
+│   └── invite.json           # Link data storage
+└── README.md
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Data Format
 
-## Deploy on Vercel
+```json
+{
+  "url": "https://join.slack.com/t/workspace/shared_invite/...",
+  "createdAt": "2024-06-17T12:00:00.000Z",
+  "isActive": true
+}
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## API
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### GET /api/invite
+Get information about the current link
+
+### POST /api/invite
+Add a new link
+```json
+{
+  "url": "https://join.slack.com/t/..."
+}
+```
+
+## Auth0 Setup
+
+To add authorization to the admin panel:
+
+1. Create an application in Auth0
+2. Add variables to `.env.local`:
+```env
+AUTH0_SECRET='your-secret'
+AUTH0_BASE_URL='http://localhost:3000'
+AUTH0_ISSUER_BASE_URL='https://your-domain.auth0.com'
+AUTH0_CLIENT_ID='your-client-id'
+AUTH0_CLIENT_SECRET='your-client-secret'
+```
+3. Uncomment Auth0 code in the corresponding files
+
+
+### Other Platforms
+Make sure the `data/` folder is writable or use external storage.
+
+## License
+
+MIT
