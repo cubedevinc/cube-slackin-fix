@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { SlackNotifications } from '@/lib/slack';
 
 const DATA_FILE = path.join(process.cwd(), 'data', 'invite.json');
 
@@ -69,6 +70,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
     }
 
+    // Get old data for notification
+    const oldData = await readInviteData();
+
     const newData: InviteData = {
       url,
       createdAt: new Date().toISOString(),
@@ -76,6 +80,11 @@ export async function POST(req: NextRequest) {
     };
 
     await writeInviteData(newData);
+
+    // Send Slack notification if URL changed
+    if (oldData.url && oldData.url !== url) {
+      await SlackNotifications.linkUpdated(oldData.url, url);
+    }
 
     return NextResponse.json(newData);
   } catch {

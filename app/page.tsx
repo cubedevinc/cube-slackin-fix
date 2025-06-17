@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { redirect } from 'next/navigation';
+import { SlackNotifications } from '@/lib/slack';
 
 interface InviteData {
   url: string;
@@ -46,6 +47,10 @@ async function checkAndUpdateInviteStatus(invite: InviteData): Promise<boolean> 
       const dataFile = path.join(process.cwd(), 'data', 'invite.json');
       const updatedInvite = { ...invite, isActive: false };
       await fs.writeFile(dataFile, JSON.stringify(updatedInvite, null, 2));
+
+      // Send Slack notification
+      await SlackNotifications.linkInvalid(invite.url);
+
       return false;
     }
 
@@ -56,6 +61,9 @@ async function checkAndUpdateInviteStatus(invite: InviteData): Promise<boolean> 
       const dataFile = path.join(process.cwd(), 'data', 'invite.json');
       const updatedInvite = { ...invite, isActive: false };
       await fs.writeFile(dataFile, JSON.stringify(updatedInvite, null, 2));
+
+      // Send Slack notification
+      await SlackNotifications.linkInvalid(invite.url);
     } catch {
       // Ignore write errors
     }
