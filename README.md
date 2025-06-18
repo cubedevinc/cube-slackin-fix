@@ -10,7 +10,8 @@ A simple redirect service for Slack invitation links with an admin panel.
 - 🔍 **Link validation** - manual and automated checking
 - 📱 **Slack notifications** for expiring/broken links
 - ⚡ **Automated monitoring** via Vercel Cron Functions
-- 💾 **Simple JSON storage** - no database required
+- ⚡ **Edge Config storage** - ultra-fast global data access (<1ms)
+- 🔄 **Hybrid storage** - files locally, Edge Config on production
 - 🎨 **Modern UI** with Tailwind CSS
 
 ## Quick Start
@@ -57,12 +58,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ├── components/
 │   └── AuthProvider.tsx            # Auth0 context provider
 ├── lib/
-│   ├── invite-utils.ts              # Centralized utilities for invite data operations
+│   ├── invite-utils.ts              # Hybrid storage utilities (files + Edge Config)
 │   └── slack-notifications.ts      # Slack notification utilities
 ├── data/
-│   └── invite.example.json          # Example data structure (actual data/ ignored by git)
+│   └── invite.example.json          # Example data structure (local development only)
 ├── middleware.ts                    # Auth0 redirect middleware
-└── vercel.json                      # Cron job configuration
+├── vercel.json                      # Cron job configuration
+└── EDGE_CONFIG_SETUP.md            # Edge Config setup instructions
 ```
 
 ### Key Components
@@ -72,14 +74,31 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **Link Validation**: Manual and automated checking of link accessibility
 - **Slack Notifications**: Automated alerts for expiring/broken links
 - **Cron Jobs**: Daily automated checks via Vercel Cron Functions
-- **Centralized Utilities**: All invite data operations consolidated in `lib/invite-utils.ts`
+- **Hybrid Storage**: Smart storage system that adapts to environment
 
 ## Data Storage
 
-The service uses simple JSON file storage in the `/data` directory. The actual data files are ignored by git for security.
+The service uses a hybrid storage approach:
 
-- `data/invite.example.json` - Example structure (included in repo)
-- `data/invite.json` - Actual data file (created automatically, ignored by git)
+- **Local Development**: JSON files in `/data` directory for easy testing
+- **Production (Vercel)**: Edge Config for ultra-fast global access (<1ms reads)
+- **Automatic Detection**: Environment-based switching with no code changes needed
+
+### Storage Architecture
+
+```typescript
+// Automatic environment detection
+const isProduction = process.env.NODE_ENV === 'production' && process.env.VERCEL === '1';
+
+// Reading data
+if (isProduction && process.env.EDGE_CONFIG) {
+  // Edge Config: <1ms global reads
+  const data = await get<InviteData>(INVITE_KEY);
+} else {
+  // Local files: JSON file system
+  const data = await fs.readFile(DATA_FILE, 'utf8');
+}
+```
 
 ### Data Format
 
@@ -153,16 +172,25 @@ tests/
 - **Integration tests** for API endpoints
 - **Mocked external dependencies** (no real Slack webhooks in tests)
 - **Clean test output** (console warnings suppressed during testing)
+- **Environment mocking** (Edge Config mocked for local testing)
 
 ## Code Architecture
 
-The project follows modern software engineering principles with a focus on maintainability and code reuse:
+The project follows modern software engineering principles with a focus on maintainability and scalability:
 
-### Centralized Utilities (`lib/invite-utils.ts`)
+### Hybrid Storage System (`lib/invite-utils.ts`)
+
+Smart storage that adapts to the environment:
+- **Local Development**: JSON file system for easy debugging
+- **Production**: Vercel Edge Config for ultra-fast global access
+- **Automatic Detection**: Environment-based switching
+- **Fallback Support**: Graceful degradation if Edge Config unavailable
+
+### Centralized Utilities
 
 All invite data operations are consolidated in a single module:
 - **InviteData interface** - Single source of truth for data types
-- **File operations** - `readInviteData()`, `writeInviteData()`
+- **Hybrid operations** - `readInviteData()`, `writeInviteData()`
 - **Validation logic** - `validateSlackInviteLink()`, `isInviteExpired()`
 - **Date calculations** - `getDaysLeft()`
 
@@ -170,13 +198,10 @@ All invite data operations are consolidated in a single module:
 
 - **DRY Principle**: No code duplication across API endpoints
 - **Type Safety**: Consistent TypeScript interfaces throughout
+- **Environment Agnostic**: Same code works locally and on Vercel
+- **Performance Optimized**: <1ms reads on production
 - **Maintainability**: Changes to data logic require updates in one place only
 - **Testability**: Centralized functions are easier to unit test
-
-### Before vs After Optimization
-
-**Before**: 5+ files with duplicate InviteData interfaces, 4 files with duplicate read/write functions
-**After**: 1 centralized utility module, clean separation of concerns
 
 ## Environment Variables
 
@@ -203,11 +228,16 @@ SLACK_WEBHOOK_URL='https://hooks.slack.com/services/...'
 
 # Cron Job Security
 CRON_SECRET='your-random-secret-key'
+
+# Edge Config (auto-generated by Vercel)
+EDGE_CONFIG='https://edge-config.vercel.com/...'
+VERCEL_API_TOKEN='your-vercel-api-token'
 ```
 
 ### For Vercel Deployment
 
-In your Vercel project settings, add these environment variables:
+1. **Create Edge Config**: Follow instructions in `EDGE_CONFIG_SETUP.md`
+2. **Add environment variables** in Vercel project settings:
 
 ```env
 # Auth0 Configuration (AUTH0_BASE_URL is auto-detected)
@@ -217,15 +247,34 @@ AUTH0_CLIENT_ID='your-client-id'
 AUTH0_CLIENT_SECRET='your-client-secret'
 
 # Slack Configuration
+AUTH0_CLIENT_ID='your-client-id'
+AUTH0_CLIENT_SECRET='your-client-secret'
+
+# Slack Configuration
 SLACK_WEBHOOK_URL='https://hooks.slack.com/services/...'
 
 # Cron Job Security
 CRON_SECRET='your-random-secret-key'
+
+# Edge Config (auto-generated when creating Edge Config)
+EDGE_CONFIG='https://edge-config.vercel.com/...'
+VERCEL_API_TOKEN='your-vercel-api-token'
 ```
 
 > **Note:** `AUTH0_BASE_URL` is automatically determined in Vercel using `VERCEL_URL` environment variable and works for both custom domains and preview deployments.
 
-## Auth0 Setup
+## Production Setup
+
+### 1. Edge Config Setup
+
+Follow the detailed instructions in `EDGE_CONFIG_SETUP.md`:
+
+1. Create Edge Config in Vercel Dashboard
+2. Generate Vercel API token
+3. Initialize data in Edge Config
+4. Verify environment variables
+
+### 2. Auth0 Setup
 
 To add authorization to the admin panel:
 
@@ -239,7 +288,7 @@ To add authorization to the admin panel:
    - `https://your-domain.com` (production)
    - `https://*.vercel.app` (preview deployments)
 
-## Slack Notifications Setup
+### 3. Slack Notifications Setup
 
 To enable Slack notifications for link monitoring:
 
@@ -250,6 +299,46 @@ The service will automatically notify about:
 - 🚨 Links expiring soon (≤ 5 days)
 - ❌ Invalid/broken links
 - ✅ Link updates
+
+## Technology Stack
+
+### Frontend & Backend
+- **Next.js 15.3.3** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first CSS framework
+- **React 19** - Latest React features
+
+### Authentication
+- **Auth0** - Secure authentication provider
+- **@auth0/nextjs-auth0** - Official Auth0 Next.js SDK
+
+### Storage
+- **Vercel Edge Config** - Ultra-fast global data store (<1ms reads)
+- **File System** - Local development storage
+- **Hybrid Architecture** - Environment-aware storage switching
+
+### Testing
+- **Vitest** - Fast unit testing framework
+- **@testing-library/react** - Component testing utilities
+- **jsdom** - Browser environment simulation
+
+### Development
+- **Turbopack** - Next-generation bundler
+- **ESLint** - Code linting
+- **PNPM** - Fast package manager
+
+### Deployment
+- **Vercel** - Serverless deployment platform
+- **Vercel Cron** - Scheduled function execution
+- **Environment Variables** - Secure configuration management
+
+## Performance
+
+- **<1ms data reads** on production (Edge Config)
+- **Global replication** across all Vercel edge locations
+- **Automatic caching** for static assets
+- **Serverless functions** for API endpoints
+- **Edge Middleware** for Auth0 redirects
 
 ## License
 

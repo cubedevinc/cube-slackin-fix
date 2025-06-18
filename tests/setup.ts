@@ -19,3 +19,9 @@ vi.mock('@auth0/nextjs-auth0/client', () => ({
 }))
 
 global.fetch = vi.fn()
+
+vi.mock('@vercel/edge-config', () => ({
+  get: vi.fn().mockResolvedValue(null),
+}))
+
+delete process.env.VERCEL

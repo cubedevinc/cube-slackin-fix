@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 export const DATA_FILE = path.join(process.cwd(), 'data', 'invite.json');
+const INVITE_KEY = 'slack_invite';
 
 export interface InviteData {
   url: string;
@@ -9,7 +10,21 @@ export interface InviteData {
   isActive: boolean;
 }
 
+const isProduction = process.env.NODE_ENV === 'production' && process.env.VERCEL === '1';
+
 export async function readInviteData(): Promise<InviteData> {
+  if (isProduction && process.env.EDGE_CONFIG) {
+    try {
+      const { get } = await import('@vercel/edge-config');
+      const data = await get<InviteData>(INVITE_KEY);
+      if (data) {
+        return data;
+      }
+    } catch (error) {
+      console.error('Edge Config read error:', error);
+    }
+  }
+
   try {
     const data = await fs.readFile(DATA_FILE, 'utf8');
     return JSON.parse(data);
@@ -23,6 +38,36 @@ export async function readInviteData(): Promise<InviteData> {
 }
 
 export async function writeInviteData(data: InviteData): Promise<void> {
+  if (isProduction && process.env.EDGE_CONFIG && process.env.VERCEL_API_TOKEN) {
+    try {
+      const edgeConfigId = extractEdgeConfigId(process.env.EDGE_CONFIG);
+      const response = await fetch(`https://api.vercel.com/v1/edge-config/${edgeConfigId}/items`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${process.env.VERCEL_API_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: [{
+            operation: 'upsert',
+            key: INVITE_KEY,
+            value: data
+          }]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Edge Config update failed: ${response.status}`);
+      }
+
+      console.log('Data saved to Edge Config successfully');
+      return;
+    } catch (error) {
+      console.error('Edge Config write error:', error);
+      throw new Error('Failed to save data to Edge Config');
+    }
+  }
+
   const dir = path.dirname(DATA_FILE);
   try {
     await fs.access(dir);
@@ -30,6 +75,14 @@ export async function writeInviteData(data: InviteData): Promise<void> {
     await fs.mkdir(dir, { recursive: true });
   }
   await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
+function extractEdgeConfigId(connectionString: string): string {
+  const match = connectionString.match(/edge-config\.vercel\.com\/([^?]+)/);
+  if (!match) {
+    throw new Error('Invalid Edge Config connection string');
+  }
+  return match[1];
 }
 
 export function isInviteExpired(createdAt: string): boolean {
