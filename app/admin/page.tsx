@@ -2,7 +2,6 @@
 
 import { useUser } from '@auth0/nextjs-auth0/client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { InviteData } from '@/lib/invite-utils';
 
 const getDaysLeft = (createdAt: string): number => {
@@ -109,12 +108,12 @@ export default function AdminPanel() {
         <div className="bg-white p-8 rounded-lg shadow-md text-center">
           <h1 className="text-2xl font-bold text-gray-800 mb-4">Authentication Required</h1>
           <p className="text-gray-600 mb-6">Please log in to access the admin panel.</p>
-          <Link
+          <a
             href="/api/auth/login"
             className="bg-pink hover:bg-pink/90 text-white font-medium py-2 px-6 rounded-md transition-colors"
           >
             Log In
-          </Link>
+          </a>
         </div>
       </div>
     );
@@ -131,12 +130,12 @@ export default function AdminPanel() {
               <h1 className="text-2xl font-bold text-gray-800">Admin Panel</h1>
               <p className="text-gray-600 mt-1">Manage Slack invitation links</p>
             </div>
-            <Link
+            <a
               href="/api/auth/logout"
               className="text-black border border-pink-600 font-medium py-2 px-6 rounded-md transition-colors hover:bg-pink-50"
             >
               Log Out
-            </Link>
+            </a>
           </div>
         </div>
 
