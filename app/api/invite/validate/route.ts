@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import {
-  InviteData,
   readInviteData,
   writeInviteData,
   validateSlackInviteLink
