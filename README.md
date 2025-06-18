@@ -19,6 +19,12 @@ A simple redirect service for Slack invitation links with an admin panel.
 # Install dependencies
 pnpm install
 
+# Copy environment variables template
+cp .env.example .env.local
+
+# Configure your variables in .env.local
+# (See Environment Variables section below)
+
 # Start in development mode
 pnpm dev
 ```
@@ -172,30 +178,73 @@ All invite data operations are consolidated in a single module:
 **Before**: 5+ files with duplicate InviteData interfaces, 4 files with duplicate read/write functions
 **After**: 1 centralized utility module, clean separation of concerns
 
+## Environment Variables
+
+### For Local Development (`.env.local`)
+
+Copy the example file and fill in your values:
+
+```bash
+cp .env.example .env.local
+```
+
+Or create a `.env.local` file manually:
+
+```env
+# Auth0 Configuration
+AUTH0_SECRET='your-random-secret-key'
+AUTH0_BASE_URL='http://localhost:3000'
+AUTH0_ISSUER_BASE_URL='https://your-domain.auth0.com'
+AUTH0_CLIENT_ID='your-client-id'
+AUTH0_CLIENT_SECRET='your-client-secret'
+
+# Slack Configuration
+SLACK_WEBHOOK_URL='https://hooks.slack.com/services/...'
+
+# Cron Job Security
+CRON_SECRET='your-random-secret-key'
+```
+
+### For Vercel Deployment
+
+In your Vercel project settings, add these environment variables:
+
+```env
+# Auth0 Configuration (AUTH0_BASE_URL is auto-detected)
+AUTH0_SECRET='your-random-secret-key'
+AUTH0_ISSUER_BASE_URL='https://your-domain.auth0.com'
+AUTH0_CLIENT_ID='your-client-id'
+AUTH0_CLIENT_SECRET='your-client-secret'
+
+# Slack Configuration
+SLACK_WEBHOOK_URL='https://hooks.slack.com/services/...'
+
+# Cron Job Security
+CRON_SECRET='your-random-secret-key'
+```
+
+> **Note:** `AUTH0_BASE_URL` is automatically determined in Vercel using `VERCEL_URL` environment variable and works for both custom domains and preview deployments.
+
 ## Auth0 Setup
 
 To add authorization to the admin panel:
 
 1. Create an application in Auth0
-2. Add variables to `.env.local`:
-```env
-AUTH0_SECRET='your-secret'
-AUTH0_BASE_URL='http://localhost:3000'
-AUTH0_ISSUER_BASE_URL='https://your-domain.auth0.com'
-AUTH0_CLIENT_ID='your-client-id'
-AUTH0_CLIENT_SECRET='your-client-secret'
-```
+2. Configure Allowed Callback URLs:
+   - `http://localhost:3000/api/auth/callback` (development)
+   - `https://your-domain.com/api/auth/callback` (production)
+   - `https://*.vercel.app/api/auth/callback` (preview deployments)
+3. Configure Allowed Logout URLs:
+   - `http://localhost:3000` (development)
+   - `https://your-domain.com` (production)
+   - `https://*.vercel.app` (preview deployments)
 
 ## Slack Notifications Setup
 
 To enable Slack notifications for link monitoring:
 
 1. Create a Slack App and add an Incoming Webhook
-2. Add webhook URL to `.env.local`:
-```env
-SLACK_WEBHOOK_URL='https://hooks.slack.com/services/...'
-CRON_SECRET='your-random-secret-key'
-```
+2. Add the webhook URL to your environment variables
 
 The service will automatically notify about:
 - 🚨 Links expiring soon (≤ 5 days)
