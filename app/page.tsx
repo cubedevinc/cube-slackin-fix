@@ -31,7 +31,6 @@ async function getInviteData(): Promise<InviteData | null> {
 
 async function checkAndUpdateInviteStatus(invite: InviteData): Promise<boolean> {
   try {
-    // Check if the invite URL is still valid
     const response = await fetch(invite.url, {
       method: 'HEAD',
       redirect: 'manual',
@@ -42,13 +41,11 @@ async function checkAndUpdateInviteStatus(invite: InviteData): Promise<boolean> 
 
     const isValid = response.status === 200 || (response.status >= 300 && response.status < 400);
 
-    // If the link is invalid, mark it as inactive
     if (!isValid) {
       const dataFile = path.join(process.cwd(), 'data', 'invite.json');
       const updatedInvite = { ...invite, isActive: false };
       await fs.writeFile(dataFile, JSON.stringify(updatedInvite, null, 2));
 
-      // Send Slack notification
       await SlackNotifications.linkInvalid(invite.url);
 
       return false;
@@ -56,16 +53,13 @@ async function checkAndUpdateInviteStatus(invite: InviteData): Promise<boolean> 
 
     return true;
   } catch {
-    // If we can't check the link, mark it as inactive to be safe
     try {
       const dataFile = path.join(process.cwd(), 'data', 'invite.json');
       const updatedInvite = { ...invite, isActive: false };
       await fs.writeFile(dataFile, JSON.stringify(updatedInvite, null, 2));
 
-      // Send Slack notification
       await SlackNotifications.linkInvalid(invite.url);
     } catch {
-      // Ignore write errors
     }
     return false;
   }
@@ -75,7 +69,6 @@ export default async function Home() {
   const invite = await getInviteData();
 
   if (invite) {
-    // Check if the invite is still valid before redirecting
     const isValid = await checkAndUpdateInviteStatus(invite);
     if (isValid) {
       redirect(invite.url);

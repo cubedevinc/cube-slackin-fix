@@ -26,7 +26,6 @@ export async function sendSlackNotification(message: string, details?: Record<st
       text: message,
     };
 
-    // Add rich formatting if details provided
     if (details) {
       payload.blocks = [
         {
@@ -66,7 +65,6 @@ export async function sendSlackNotification(message: string, details?: Record<st
   }
 }
 
-// Predefined notification types
 export const SlackNotifications = {
   linkExpired: (url: string, daysLeft: number) =>
     sendSlackNotification(

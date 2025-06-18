@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
-// Mock fetch globally
 global.fetch = vi.fn()
 
 describe('Slack Notifications', () => {
@@ -11,10 +10,8 @@ describe('Slack Notifications', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    // Reset environment variable for each test
     vi.stubEnv('SLACK_WEBHOOK_URL', 'https://hooks.slack.com/test/webhook')
 
-    // Suppress console outputs in tests
     console.warn = vi.fn()
     console.error = vi.fn()
 
@@ -25,7 +22,6 @@ describe('Slack Notifications', () => {
   })
 
   afterEach(() => {
-    // Restore original console methods
     console.warn = originalConsoleWarn
     console.error = originalConsoleError
   })

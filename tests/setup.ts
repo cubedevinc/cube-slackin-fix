@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
-// Mock Next.js router
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),
@@ -12,7 +11,6 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/',
 }))
 
-// Mock Auth0
 vi.mock('@auth0/nextjs-auth0/client', () => ({
   useUser: () => ({
     user: null,
@@ -20,5 +18,4 @@ vi.mock('@auth0/nextjs-auth0/client', () => ({
   }),
 }))
 
-// Mock fetch globally
 global.fetch = vi.fn()

@@ -35,7 +35,7 @@ function getDaysLeft(createdAt: string): number {
   const now = new Date();
   const diffTime = now.getTime() - created.getTime();
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  return 30 - diffDays; // Slack invites expire after 30 days
+  return 30 - diffDays;
 }
 
 async function validateSlackInviteLink(url: string): Promise<boolean> {
@@ -69,7 +69,6 @@ async function validateSlackInviteLink(url: string): Promise<boolean> {
 }
 
 export async function GET(req: NextRequest) {
-  // Verify this is actually a cron request (optional security)
   const authHeader = req.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -91,18 +90,15 @@ export async function GET(req: NextRequest) {
     let notificationSent = false;
     let action = 'none';
 
-    // Check if link is expiring soon (5 days or less)
     if (daysLeft <= 5 && daysLeft > 0 && invite.isActive) {
       await SlackNotifications.linkExpired(invite.url, daysLeft);
       notificationSent = true;
       action = 'expiring_warning';
     }
 
-    // Check if link is invalid
     if (!isValid && invite.isActive) {
       await SlackNotifications.linkInvalid(invite.url);
 
-      // Deactivate the link
       await writeInviteData({
         ...invite,
         isActive: false
@@ -112,11 +108,9 @@ export async function GET(req: NextRequest) {
       action = 'deactivated_invalid';
     }
 
-    // Check if link is expired (over 30 days)
     if (daysLeft <= 0 && invite.isActive) {
       await SlackNotifications.linkExpired(invite.url, 0);
 
-      // Deactivate the link
       await writeInviteData({
         ...invite,
         isActive: false

@@ -70,7 +70,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
     }
 
-    // Get old data for notification
     const oldData = await readInviteData();
 
     const newData: InviteData = {
@@ -81,7 +80,6 @@ export async function POST(req: NextRequest) {
 
     await writeInviteData(newData);
 
-    // Send Slack notification if URL changed
     if (oldData.url && oldData.url !== url) {
       await SlackNotifications.linkUpdated(oldData.url, url);
     }

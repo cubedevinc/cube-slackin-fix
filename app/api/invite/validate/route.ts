@@ -36,24 +36,20 @@ async function writeInviteData(data: InviteData): Promise<void> {
 
 async function validateSlackInviteLink(url: string): Promise<boolean> {
   try {
-    // Trim whitespace and check if URL is valid
     const trimmedUrl = url.trim();
 
     if (!trimmedUrl) {
       return false;
     }
 
-    // First, check if the URL has the correct Slack invite format
     if (!trimmedUrl.includes('join.slack.com') && !trimmedUrl.includes('slack.com/signup')) {
       return false;
     }
 
-    // Create an AbortController for timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
-      // Make a HEAD request to check if the link is accessible
       const response = await fetch(trimmedUrl, {
         method: 'HEAD',
         signal: controller.signal,
@@ -64,13 +60,10 @@ async function validateSlackInviteLink(url: string): Promise<boolean> {
 
       clearTimeout(timeoutId);
 
-      // Check if response exists and has status property
       if (!response || typeof response.status === 'undefined') {
         return false;
       }
 
-      // Slack invite links typically return 200 for valid invites
-      // or redirect (3xx) to login/signup pages
       return response.status >= 200 && response.status < 400;
     } catch (fetchError) {
       clearTimeout(timeoutId);
@@ -94,7 +87,6 @@ export async function POST() {
 
     const isValid = await validateSlackInviteLink(data.url);
 
-    // Update the isActive status based on validation result
     const updatedData = {
       ...data,
       isActive: isValid

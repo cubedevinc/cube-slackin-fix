@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-// Basic API tests for /api/invite endpoint
 describe('/api/invite - Basic API Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -26,7 +25,6 @@ describe('/api/invite - Basic API Tests', () => {
       const response = await POST(request)
       const result = await response.json()
 
-      // API returns 500 for missing body, which is expected behavior
       expect(response.status).toBe(500)
       expect(result.error).toBeDefined()
     })
