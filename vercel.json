@@ -9,6 +9,11 @@
         }
       ]
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/check-invite",
+      "schedule": "0 9 * * *"
+    }
   ]
 }
-
