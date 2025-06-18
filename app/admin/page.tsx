@@ -2,12 +2,7 @@
 
 import { useUser } from '@auth0/nextjs-auth0/client';
 import { useState, useEffect } from 'react';
-
-interface InviteData {
-  url: string;
-  createdAt: string;
-  isActive: boolean;
-}
+import { InviteData } from '@/lib/invite-utils';
 
 const getDaysLeft = (createdAt: string): number => {
   const diffInMs = Date.now() - new Date(createdAt).getTime();
@@ -60,14 +55,14 @@ export default function AdminPanel() {
         body: JSON.stringify({ url: newUrl.trim() }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         setInvite(data);
         setNewUrl('');
         setMessage('Link updated successfully!');
       } else {
-        const error = await response.json();
-        setMessage(`Error: ${error.error}`);
+        setMessage(`Error: ${data.error}`);
       }
     } catch {
       setMessage('Error saving link');
@@ -83,19 +78,11 @@ export default function AdminPanel() {
     setValidationMessage('');
 
     try {
-      const response = await fetch('/api/invite/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const response = await fetch('/api/invite/validate', { method: 'POST' });
+      const data = await response.json();
 
-      if (response.ok) {
-        const data = await response.json();
-        setValidationMessage(data.message);
-        await fetchInvite();
-      } else {
-        const error = await response.json();
-        setValidationMessage(`Validation failed: ${error.error}`);
-      }
+      setValidationMessage(response.ok ? data.message : `Validation failed: ${data.error}`);
+      if (response.ok) await fetchInvite();
     } catch {
       setValidationMessage('Error validating link');
     } finally {

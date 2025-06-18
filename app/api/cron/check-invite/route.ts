@@ -1,70 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { SlackNotifications } from '@/lib/slack-notifications';
+import {
+  InviteData,
+  readInviteData,
+  writeInviteData,
+  getDaysLeft,
+  validateSlackInviteLink
+} from '@/lib/invite-utils';
 
-const DATA_FILE = path.join(process.cwd(), 'data', 'invite.json');
-
-interface InviteData {
-  url: string;
-  createdAt: string;
-  isActive: boolean;
-}
-
-async function readInviteData(): Promise<InviteData | null> {
+async function readInviteDataOrNull(): Promise<InviteData | null> {
   try {
-    const data = await fs.readFile(DATA_FILE, 'utf8');
-    return JSON.parse(data);
+    return await readInviteData();
   } catch {
     return null;
-  }
-}
-
-async function writeInviteData(data: InviteData): Promise<void> {
-  const dir = path.dirname(DATA_FILE);
-  try {
-    await fs.access(dir);
-  } catch {
-    await fs.mkdir(dir, { recursive: true });
-  }
-  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
-function getDaysLeft(createdAt: string): number {
-  const created = new Date(createdAt);
-  const now = new Date();
-  const diffTime = now.getTime() - created.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  return 30 - diffDays;
-}
-
-async function validateSlackInviteLink(url: string): Promise<boolean> {
-  try {
-    if (!url.includes('join.slack.com') && !url.includes('slack.com/signup')) {
-      return false;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-    try {
-      const response = await fetch(url, {
-        method: 'HEAD',
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'SlackInviteValidator/1.0'
-        }
-      });
-
-      clearTimeout(timeoutId);
-      return response.status >= 200 && response.status < 400;
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      throw fetchError;
-    }
-  } catch (error) {
-    console.error('Error validating Slack invite link:', error);
-    return false;
   }
 }
 
@@ -75,7 +23,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const invite = await readInviteData();
+    const invite = await readInviteDataOrNull();
 
     if (!invite || !invite.url) {
       return NextResponse.json({

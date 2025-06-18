@@ -51,7 +51,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ├── components/
 │   └── AuthProvider.tsx            # Auth0 context provider
 ├── lib/
-│   └── slack.ts                     # Slack notification utilities
+│   ├── invite-utils.ts              # Centralized utilities for invite data operations
+│   └── slack-notifications.ts      # Slack notification utilities
 ├── data/
 │   └── invite.example.json          # Example data structure (actual data/ ignored by git)
 ├── middleware.ts                    # Auth0 redirect middleware
@@ -65,6 +66,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **Link Validation**: Manual and automated checking of link accessibility
 - **Slack Notifications**: Automated alerts for expiring/broken links
 - **Cron Jobs**: Daily automated checks via Vercel Cron Functions
+- **Centralized Utilities**: All invite data operations consolidated in `lib/invite-utils.ts`
 
 ## Data Storage
 
@@ -145,6 +147,30 @@ tests/
 - **Integration tests** for API endpoints
 - **Mocked external dependencies** (no real Slack webhooks in tests)
 - **Clean test output** (console warnings suppressed during testing)
+
+## Code Architecture
+
+The project follows modern software engineering principles with a focus on maintainability and code reuse:
+
+### Centralized Utilities (`lib/invite-utils.ts`)
+
+All invite data operations are consolidated in a single module:
+- **InviteData interface** - Single source of truth for data types
+- **File operations** - `readInviteData()`, `writeInviteData()`
+- **Validation logic** - `validateSlackInviteLink()`, `isInviteExpired()`
+- **Date calculations** - `getDaysLeft()`
+
+### Benefits
+
+- **DRY Principle**: No code duplication across API endpoints
+- **Type Safety**: Consistent TypeScript interfaces throughout
+- **Maintainability**: Changes to data logic require updates in one place only
+- **Testability**: Centralized functions are easier to unit test
+
+### Before vs After Optimization
+
+**Before**: 5+ files with duplicate InviteData interfaces, 4 files with duplicate read/write functions
+**After**: 1 centralized utility module, clean separation of concerns
 
 ## Auth0 Setup
 

@@ -1,63 +1,38 @@
-import { promises as fs } from 'fs';
-import path from 'path';
 import { redirect } from 'next/navigation';
 import { SlackNotifications } from '@/lib/slack-notifications';
+import {
+  InviteData,
+  readInviteData,
+  writeInviteData,
+  isInviteExpired,
+  validateSlackInviteLink
+} from '@/lib/invite-utils';
 
-interface InviteData {
-  url: string;
-  createdAt: string;
-  isActive: boolean;
-}
+async function getActiveInvite(): Promise<InviteData | null> {
+  const invite = await readInviteData();
 
-async function getInviteData(): Promise<InviteData | null> {
-  try {
-    const dataFile = path.join(process.cwd(), 'data', 'invite.json');
-    const data = await fs.readFile(dataFile, 'utf8');
-    const invite = JSON.parse(data);
-
-    const created = new Date(invite.createdAt);
-    const now = new Date();
-    const diffInDays = (now.getTime() - created.getTime()) / (1000 * 3600 * 24);
-    const isExpired = diffInDays > 30;
-
-    if (invite.isActive && !isExpired && invite.url) {
-      return invite;
-    }
-    return null;
-  } catch {
-    return null;
+  if (invite.isActive && !isInviteExpired(invite.createdAt) && invite.url) {
+    return invite;
   }
+  return null;
 }
 
 async function checkAndUpdateInviteStatus(invite: InviteData): Promise<boolean> {
   try {
-    const response = await fetch(invite.url, {
-      method: 'HEAD',
-      redirect: 'manual',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; LinkChecker/1.0)'
-      }
-    });
-
-    const isValid = response.status === 200 || (response.status >= 300 && response.status < 400);
+    const isValid = await validateSlackInviteLink(invite.url);
 
     if (!isValid) {
-      const dataFile = path.join(process.cwd(), 'data', 'invite.json');
       const updatedInvite = { ...invite, isActive: false };
-      await fs.writeFile(dataFile, JSON.stringify(updatedInvite, null, 2));
-
+      await writeInviteData(updatedInvite);
       await SlackNotifications.linkInvalid(invite.url);
-
       return false;
     }
 
     return true;
   } catch {
     try {
-      const dataFile = path.join(process.cwd(), 'data', 'invite.json');
       const updatedInvite = { ...invite, isActive: false };
-      await fs.writeFile(dataFile, JSON.stringify(updatedInvite, null, 2));
-
+      await writeInviteData(updatedInvite);
       await SlackNotifications.linkInvalid(invite.url);
     } catch {
     }
@@ -66,7 +41,7 @@ async function checkAndUpdateInviteStatus(invite: InviteData): Promise<boolean> 
 }
 
 export default async function Home() {
-  const invite = await getInviteData();
+  const invite = await getActiveInvite();
 
   if (invite) {
     const isValid = await checkAndUpdateInviteStatus(invite);
