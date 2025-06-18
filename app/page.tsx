@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { redirect } from 'next/navigation';
-import { SlackNotifications } from '@/lib/slack';
+import { SlackNotifications } from '@/lib/slack-notifications';
 
 interface InviteData {
   url: string;

@@ -53,7 +53,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ├── lib/
 │   └── slack.ts                     # Slack notification utilities
 ├── data/
-│   └── invite.json                  # Invite link storage
+│   └── invite.example.json          # Example data structure (actual data/ ignored by git)
 ├── middleware.ts                    # Auth0 redirect middleware
 └── vercel.json                      # Cron job configuration
 ```
@@ -66,12 +66,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **Slack Notifications**: Automated alerts for expiring/broken links
 - **Cron Jobs**: Daily automated checks via Vercel Cron Functions
 
-## Data Format
+## Data Storage
+
+The service uses simple JSON file storage in the `/data` directory. The actual data files are ignored by git for security.
+
+- `data/invite.example.json` - Example structure (included in repo)
+- `data/invite.json` - Actual data file (created automatically, ignored by git)
+
+### Data Format
 
 ```json
 {
   "url": "https://join.slack.com/t/workspace/shared_invite/...",
-  "createdAt": "2024-06-17T12:00:00.000Z",
+  "createdAt": "2025-06-17T12:00:00.000Z",
   "isActive": true
 }
 ```
@@ -124,10 +131,6 @@ The service will automatically notify about:
 - 🚨 Links expiring soon (≤ 5 days)
 - ❌ Invalid/broken links
 - ✅ Link updates
-
-
-### Other Platforms
-Make sure the `data/` folder is writable or use external storage.
 
 ## License
 

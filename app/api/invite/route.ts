@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { SlackNotifications } from '@/lib/slack';
+import { SlackNotifications } from '@/lib/slack-notifications';
 
 const DATA_FILE = path.join(process.cwd(), 'data', 'invite.json');
 
