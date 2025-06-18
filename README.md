@@ -102,6 +102,50 @@ Manually validate the current invite link
 ### GET /api/cron/check-invite
 Automated cron endpoint for link monitoring (requires Bearer token)
 
+## Testing
+
+The project includes comprehensive test coverage using **Vitest** and **Testing Library**.
+
+### Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test --watch
+
+# Run tests with coverage
+pnpm test --coverage
+```
+
+### Test Structure
+
+```
+tests/
+├── setup.ts                      # Test environment configuration
+└── api/
+    ├── invite-api.test.ts         # API endpoint tests (4 tests)
+    ├── validate-api.test.ts       # Validation endpoint tests (2 tests)
+    └── slack-notifications.test.ts # Slack notification logic tests (8 tests)
+```
+
+### Test Coverage
+
+- **✅ API Endpoints**: All CRUD operations and validation endpoints
+- **✅ Slack Notifications**: Complete logic testing without real HTTP requests
+- **✅ Error Handling**: Edge cases and error scenarios
+- **✅ Data Validation**: Input validation and response formatting
+
+**Total: 14 tests** covering all critical functionality.
+
+### Test Philosophy
+
+- **Unit tests** for isolated logic (Slack notifications)
+- **Integration tests** for API endpoints
+- **Mocked external dependencies** (no real Slack webhooks in tests)
+- **Clean test output** (console warnings suppressed during testing)
+
 ## Auth0 Setup
 
 To add authorization to the admin panel:
