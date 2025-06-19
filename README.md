@@ -34,10 +34,12 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## Usage
 
 ### Main Page
+
 - Automatically redirects to the active invitation link
 - Shows a message if the link is missing or expired
 
 ### Admin Panel `/admin`
+
 - View current link and its status
 - Add new links
 - Display link lifetime (30 days)
@@ -111,10 +113,13 @@ export async function readInviteData(): Promise<InviteData> {
 ## API
 
 ### GET /api/invite
+
 Get information about the current invite link
 
 ### POST /api/invite
+
 Add a new invite link
+
 ```json
 {
   "url": "https://join.slack.com/t/..."
@@ -122,9 +127,11 @@ Add a new invite link
 ```
 
 ### POST /api/invite/validate
+
 Manually validate the current invite link
 
 ### GET /api/cron/check-invite
+
 Automated cron endpoint for link monitoring (requires Bearer token)
 
 ## Testing
@@ -179,6 +186,7 @@ The project follows modern software engineering principles with a focus on maint
 ### Centralized Utilities (`lib/invite-utils.ts`)
 
 All invite data operations are consolidated in a single module:
+
 - **InviteData interface** - Single source of truth for data types
 - **Edge Config operations** - `readInviteData()`, `writeInviteData()`
 - **Validation logic** - `validateSlackInviteLink()`, `isInviteExpired()`
@@ -188,6 +196,7 @@ All invite data operations are consolidated in a single module:
 ### Auth0 Integration (`lib/auth-utils.ts`)
 
 Centralized Auth0 configuration utilities:
+
 - **Dynamic base URL detection** - Automatic URL detection for Vercel deployments
 - **Environment-aware configuration** - Works across local and production environments
 
@@ -291,6 +300,7 @@ To enable Slack notifications for link monitoring:
 2. Add the webhook URL to your environment variables
 
 The service will automatically notify about:
+
 - 🚨 Links expiring soon (≤ 5 days)
 - ❌ Invalid/broken links
 - ✅ Link updates
@@ -298,31 +308,37 @@ The service will automatically notify about:
 ## Technology Stack
 
 ### Frontend & Backend
+
 - **Next.js 15.3.3** - React framework with App Router
 - **TypeScript** - Type-safe development
 - **Tailwind CSS** - Utility-first CSS framework
 - **React 19** - Latest React features
 
 ### Authentication
+
 - **Auth0** - Secure authentication provider
 - **@auth0/nextjs-auth0** - Official Auth0 Next.js SDK
 
 ### Storage
+
 - **Vercel Edge Config** - Ultra-fast global data store (<1ms reads)
 - **REST API Fallback** - SDK with REST API backup for reliability
 - **Global Replication** - Data available across all Vercel edge locations
 
 ### Testing
+
 - **Vitest** - Fast unit testing framework
 - **@testing-library/react** - Component testing utilities
 - **jsdom** - Browser environment simulation
 
 ### Development
+
 - **Turbopack** - Next-generation bundler
 - **ESLint** - Code linting
 - **PNPM** - Fast package manager
 
 ### Deployment
+
 - **Vercel** - Serverless deployment platform
 - **Vercel Cron** - Scheduled function execution
 - **Environment Variables** - Secure configuration management

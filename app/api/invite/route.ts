@@ -4,7 +4,7 @@ import {
   InviteData,
   readInviteData,
   writeInviteData,
-  isInviteExpired
+  isInviteExpired,
 } from '@/lib/invite-utils';
 
 export async function GET() {
@@ -14,7 +14,7 @@ export async function GET() {
 
     return NextResponse.json({
       ...data,
-      isActive: data.isActive && !isExpired
+      isActive: data.isActive && !isExpired,
     });
   } catch {
     return NextResponse.json({ error: 'Error reading data' }, { status: 500 });
@@ -32,7 +32,10 @@ export async function POST(req: NextRequest) {
     try {
       new URL(url);
     } catch {
-      return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid URL format' },
+        { status: 400 }
+      );
     }
 
     const oldData = await readInviteData();
@@ -40,7 +43,7 @@ export async function POST(req: NextRequest) {
     const newData: InviteData = {
       url,
       createdAt: new Date().toISOString(),
-      isActive: true
+      isActive: true,
     };
 
     await writeInviteData(newData);
@@ -52,9 +55,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(newData);
   } catch (error) {
     console.error('Error in POST /api/invite:', error);
-    return NextResponse.json({
-      error: 'Error saving data',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Error saving data',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }

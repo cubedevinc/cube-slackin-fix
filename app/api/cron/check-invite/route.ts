@@ -5,7 +5,7 @@ import {
   readInviteData,
   writeInviteData,
   getDaysLeft,
-  validateSlackInviteLink
+  validateSlackInviteLink,
 } from '@/lib/invite-utils';
 
 async function readInviteDataOrNull(): Promise<InviteData | null> {
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     if (!invite || !invite.url) {
       return NextResponse.json({
         message: 'No invite link to check',
-        checked: false
+        checked: false,
       });
     }
 
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
       await writeInviteData({
         ...invite,
-        isActive: false
+        isActive: false,
       });
 
       notificationSent = true;
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
 
       await writeInviteData({
         ...invite,
-        isActive: false
+        isActive: false,
       });
 
       notificationSent = true;
@@ -75,14 +75,16 @@ export async function GET(req: NextRequest) {
       isActive: invite.isActive,
       notificationSent,
       action,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     console.error('Cron job error:', error);
-    return NextResponse.json({
-      error: 'Cron job failed',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Cron job failed',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
   }
 }

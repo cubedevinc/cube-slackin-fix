@@ -34,9 +34,9 @@ export async function readInviteData(): Promise<InviteData> {
         const response = await fetch(url, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${process.env.VERCEL_API_TOKEN}`,
+            Authorization: `Bearer ${process.env.VERCEL_API_TOKEN}`,
             'Content-Type': 'application/json',
-          }
+          },
         });
 
         if (response.ok) {
@@ -51,7 +51,7 @@ export async function readInviteData(): Promise<InviteData> {
     return {
       url: '',
       createdAt: new Date().toISOString(),
-      isActive: false
+      isActive: false,
     };
   } catch (error) {
     console.error('Edge Config read error:', error);
@@ -78,16 +78,18 @@ export async function writeInviteData(data: InviteData): Promise<void> {
     const response = await fetch(url, {
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${process.env.VERCEL_API_TOKEN}`,
+        Authorization: `Bearer ${process.env.VERCEL_API_TOKEN}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        items: [{
-          operation: 'upsert',
-          key: INVITE_KEY,
-          value: data
-        }]
-      })
+        items: [
+          {
+            operation: 'upsert',
+            key: INVITE_KEY,
+            value: data,
+          },
+        ],
+      }),
     });
 
     if (!response.ok) {
@@ -95,9 +97,11 @@ export async function writeInviteData(data: InviteData): Promise<void> {
       console.error('Edge Config API response:', {
         status: response.status,
         statusText: response.statusText,
-        body: errorText
+        body: errorText,
       });
-      throw new Error(`Edge Config update failed: ${response.status} ${response.statusText}. ${errorText}`);
+      throw new Error(
+        `Edge Config update failed: ${response.status} ${response.statusText}. ${errorText}`
+      );
     }
   } catch (error) {
     console.error('Edge Config write error:', error);
@@ -134,7 +138,10 @@ export async function validateSlackInviteLink(url: string): Promise<boolean> {
 
     if (!trimmedUrl) return false;
 
-    if (!trimmedUrl.includes('join.slack.com') && !trimmedUrl.includes('slack.com/signup')) {
+    if (
+      !trimmedUrl.includes('join.slack.com') &&
+      !trimmedUrl.includes('slack.com/signup')
+    ) {
       return false;
     }
 
@@ -146,8 +153,8 @@ export async function validateSlackInviteLink(url: string): Promise<boolean> {
         method: 'HEAD',
         signal: controller.signal,
         headers: {
-          'User-Agent': 'SlackInviteValidator/1.0'
-        }
+          'User-Agent': 'SlackInviteValidator/1.0',
+        },
       });
 
       clearTimeout(timeoutId);

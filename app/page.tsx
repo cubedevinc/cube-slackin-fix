@@ -5,7 +5,7 @@ import {
   readInviteData,
   writeInviteData,
   isInviteExpired,
-  validateSlackInviteLink
+  validateSlackInviteLink,
 } from '@/lib/invite-utils';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +19,9 @@ async function getActiveInvite(): Promise<InviteData | null> {
   return null;
 }
 
-async function checkAndUpdateInviteStatus(invite: InviteData): Promise<boolean> {
+async function checkAndUpdateInviteStatus(
+  invite: InviteData
+): Promise<boolean> {
   try {
     const isValid = await validateSlackInviteLink(invite.url);
 
@@ -36,8 +38,7 @@ async function checkAndUpdateInviteStatus(invite: InviteData): Promise<boolean> 
       const updatedInvite = { ...invite, isActive: false };
       await writeInviteData(updatedInvite);
       await SlackNotifications.linkInvalid(invite.url);
-    } catch {
-    }
+    } catch {}
     return false;
   }
 }
@@ -53,12 +54,12 @@ export default async function Home() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md text-center">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+      <div className="rounded-lg bg-white p-8 text-center shadow-md">
+        <h1 className="mb-4 text-2xl font-bold text-gray-800">
           Invitation Unavailable
         </h1>
-        <p className="text-gray-600 mb-6">
+        <p className="mb-6 text-gray-600">
           No active invitation is currently available or it has expired.
         </p>
         <p className="text-sm text-gray-500">

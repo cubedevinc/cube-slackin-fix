@@ -13,7 +13,10 @@ interface SlackMessage {
   }>;
 }
 
-export async function sendSlackNotification(message: string, details?: Record<string, string>): Promise<boolean> {
+export async function sendSlackNotification(
+  message: string,
+  details?: Record<string, string>
+): Promise<boolean> {
   const webhookUrl = process.env.SLACK_WEBHOOK_URL;
 
   if (!webhookUrl) {
@@ -29,19 +32,19 @@ export async function sendSlackNotification(message: string, details?: Record<st
     if (details) {
       payload.blocks = [
         {
-          type: "section",
+          type: 'section',
           text: {
-            type: "mrkdwn",
-            text: message
-          }
+            type: 'mrkdwn',
+            text: message,
+          },
         },
         {
-          type: "section",
+          type: 'section',
           fields: Object.entries(details).map(([key, value]) => ({
-            type: "mrkdwn",
-            text: `*${key}:* ${value}`
-          }))
-        }
+            type: 'mrkdwn',
+            text: `*${key}:* ${value}`,
+          })),
+        },
       ];
     }
 
@@ -67,32 +70,25 @@ export async function sendSlackNotification(message: string, details?: Record<st
 
 export const SlackNotifications = {
   linkExpired: (url: string, daysLeft: number) =>
-    sendSlackNotification(
-      `🚨 *Slack Invite Link Expiring Soon*`,
-      {
-        'Link': url,
-        'Days Left': daysLeft.toString(),
-        'Action': 'Please update the invite link in the <http://slack.cube.dev/admin|Admin Panel>'
-      }
-    ),
+    sendSlackNotification(`🚨 *Slack Invite Link Expiring Soon*`, {
+      Link: url,
+      'Days Left': daysLeft.toString(),
+      Action:
+        'Please update the invite link in the <http://slack.cube.dev/admin|Admin Panel>',
+    }),
 
   linkInvalid: (url: string) =>
-    sendSlackNotification(
-      `❌ *Slack Invite Link is Invalid*`,
-      {
-        'Link': url,
-        'Status': 'Link is no longer accessible',
-        'Action': 'Please update the invite link immediately in the <http://slack.cube.dev/admin|Admin Panel>'
-      }
-    ),
+    sendSlackNotification(`❌ *Slack Invite Link is Invalid*`, {
+      Link: url,
+      Status: 'Link is no longer accessible',
+      Action:
+        'Please update the invite link immediately in the <http://slack.cube.dev/admin|Admin Panel>',
+    }),
 
   linkUpdated: (oldUrl: string, newUrl: string) =>
-    sendSlackNotification(
-      `✅ *Slack Invite Link Updated*`,
-      {
-        'Old Link': oldUrl.substring(0, 50) + '...',
-        'New Link': newUrl.substring(0, 50) + '...',
-        'Updated By': 'Admin Panel'
-      }
-    )
+    sendSlackNotification(`✅ *Slack Invite Link Updated*`, {
+      'Old Link': oldUrl.substring(0, 50) + '...',
+      'New Link': newUrl.substring(0, 50) + '...',
+      'Updated By': 'Admin Panel',
+    }),
 };

@@ -4,12 +4,12 @@ export const GET = handleAuth({
   login: handleLogin({
     returnTo: '/admin',
     authorizationParams: {
-      scope: 'openid profile email'
-    }
+      scope: 'openid profile email',
+    },
   }),
   logout: handleLogout({
-    returnTo: '/admin'
-  })
+    returnTo: '/admin',
+  }),
 });
 
 export const POST = GET;
