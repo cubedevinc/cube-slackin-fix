@@ -64,7 +64,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 │   └── slack-notifications.ts      # Slack notification utilities
 ├── middleware.ts                    # Auth0 redirect middleware
 ├── vercel.json                      # Cron job configuration
-├── EDGE_CONFIG_SETUP.md            # Edge Config setup instructions
 └── .env.example                     # Environment variables template
 ```
 
@@ -83,7 +82,7 @@ The service uses Vercel Edge Config for ultra-fast global data storage:
 - **Production & Development**: Edge Config provides <1ms global reads across all regions
 - **API-based Operations**: Both read and write operations use Vercel's Edge Config API
 - **Automatic Fallback**: Returns empty data structure if Edge Config is unavailable
-- **Environment Required**: Requires `EDGE_CONFIG` and `VERCEL_API_TOKEN` environment variables
+- **Environment Required**: Requires `EDGE_CONFIG`, `VERCEL_TEAM_ID` and `VERCEL_API_TOKEN` environment variables
 
 ### Storage Architecture
 
@@ -269,8 +268,6 @@ VERCEL_TEAM_ID='your-team-id-if-using-team'
 ## Production Setup
 
 ### 1. Edge Config Setup
-
-Follow the detailed instructions in `EDGE_CONFIG_SETUP.md`:
 
 1. Create Edge Config in Vercel Dashboard
 2. Generate Vercel API token with appropriate permissions
