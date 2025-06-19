@@ -11,7 +11,6 @@ A simple redirect service for Slack invitation links with an admin panel.
 - 📱 **Slack notifications** for expiring/broken links
 - ⚡ **Automated monitoring** via Vercel Cron Functions
 - ⚡ **Edge Config storage** - ultra-fast global data access (<1ms)
-- 🔄 **Hybrid storage** - files locally, Edge Config on production
 - 🎨 **Modern UI** with Tailwind CSS
 
 ## Quick Start
@@ -58,45 +57,44 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ├── components/
 │   └── AuthProvider.tsx            # Auth0 context provider
 ├── lib/
-│   ├── invite-utils.ts              # Hybrid storage utilities (files + Edge Config)
+│   ├── auth-utils.ts                # Auth0 configuration utilities
+│   ├── invite-utils.ts              # Edge Config storage utilities
 │   └── slack-notifications.ts      # Slack notification utilities
-├── data/
-│   └── invite.example.json          # Example data structure (local development only)
 ├── middleware.ts                    # Auth0 redirect middleware
 ├── vercel.json                      # Cron job configuration
-└── EDGE_CONFIG_SETUP.md            # Edge Config setup instructions
+├── EDGE_CONFIG_SETUP.md            # Edge Config setup instructions
+└── .env.example                     # Environment variables template
 ```
 
 ### Key Components
 
-- **Redirect Service**: Main page automatically redirects users to active Slack invite
 - **Admin Panel**: Secure interface for managing invite links with Auth0 authentication
 - **Link Validation**: Manual and automated checking of link accessibility
 - **Slack Notifications**: Automated alerts for expiring/broken links
 - **Cron Jobs**: Daily automated checks via Vercel Cron Functions
-- **Hybrid Storage**: Smart storage system that adapts to environment
+- **Edge Config Storage**: Ultra-fast global data storage on Vercel Edge Network
 
 ## Data Storage
 
-The service uses a hybrid storage approach:
+The service uses Vercel Edge Config for ultra-fast global data storage:
 
-- **Local Development**: JSON files in `/data` directory for easy testing
-- **Production (Vercel)**: Edge Config for ultra-fast global access (<1ms reads)
-- **Automatic Detection**: Environment-based switching with no code changes needed
+- **Production & Development**: Edge Config provides <1ms global reads across all regions
+- **API-based Operations**: Both read and write operations use Vercel's Edge Config API
+- **Automatic Fallback**: Returns empty data structure if Edge Config is unavailable
+- **Environment Required**: Requires `EDGE_CONFIG` and `VERCEL_API_TOKEN` environment variables
 
 ### Storage Architecture
 
 ```typescript
-// Automatic environment detection
-const isProduction = process.env.NODE_ENV === 'production' && process.env.VERCEL === '1';
-
-// Reading data
-if (isProduction && process.env.EDGE_CONFIG) {
-  // Edge Config: <1ms global reads
+// Edge Config operations with REST API fallback
+export async function readInviteData(): Promise<InviteData> {
+  // Try SDK first
   const data = await get<InviteData>(INVITE_KEY);
-} else {
-  // Local files: JSON file system
-  const data = await fs.readFile(DATA_FILE, 'utf8');
+  if (data) return data;
+
+  // Fallback to REST API if SDK fails
+  const response = await fetch(`https://api.vercel.com/v1/edge-config/...`);
+  // Returns empty structure if both fail
 }
 ```
 
@@ -178,28 +176,27 @@ tests/
 
 The project follows modern software engineering principles with a focus on maintainability and scalability:
 
-### Hybrid Storage System (`lib/invite-utils.ts`)
-
-Smart storage that adapts to the environment:
-- **Local Development**: JSON file system for easy debugging
-- **Production**: Vercel Edge Config for ultra-fast global access
-- **Automatic Detection**: Environment-based switching
-- **Fallback Support**: Graceful degradation if Edge Config unavailable
-
-### Centralized Utilities
+### Centralized Utilities (`lib/invite-utils.ts`)
 
 All invite data operations are consolidated in a single module:
 - **InviteData interface** - Single source of truth for data types
-- **Hybrid operations** - `readInviteData()`, `writeInviteData()`
+- **Edge Config operations** - `readInviteData()`, `writeInviteData()`
 - **Validation logic** - `validateSlackInviteLink()`, `isInviteExpired()`
 - **Date calculations** - `getDaysLeft()`
+- **API Fallback** - Automatic fallback from SDK to REST API
+
+### Auth0 Integration (`lib/auth-utils.ts`)
+
+Centralized Auth0 configuration utilities:
+- **Dynamic base URL detection** - Automatic URL detection for Vercel deployments
+- **Environment-aware configuration** - Works across local and production environments
 
 ### Benefits
 
 - **DRY Principle**: No code duplication across API endpoints
 - **Type Safety**: Consistent TypeScript interfaces throughout
-- **Environment Agnostic**: Same code works locally and on Vercel
-- **Performance Optimized**: <1ms reads on production
+- **API Resilience**: SDK with REST API fallback for maximum reliability
+- **Performance Optimized**: <1ms reads globally via Edge Config
 - **Maintainability**: Changes to data logic require updates in one place only
 - **Testability**: Centralized functions are easier to unit test
 
@@ -232,21 +229,17 @@ CRON_SECRET='your-random-secret-key'
 # Edge Config (auto-generated by Vercel)
 EDGE_CONFIG='https://edge-config.vercel.com/...'
 VERCEL_API_TOKEN='your-vercel-api-token'
+VERCEL_TEAM_ID='your-team-id-if-using-team'
 ```
 
 ### For Vercel Deployment
 
-1. **Create Edge Config**: Follow instructions in `EDGE_CONFIG_SETUP.md`
-2. **Add environment variables** in Vercel project settings:
+Add environment variables in Vercel project settings:
 
 ```env
 # Auth0 Configuration (AUTH0_BASE_URL is auto-detected)
 AUTH0_SECRET='your-random-secret-key'
 AUTH0_ISSUER_BASE_URL='https://your-domain.auth0.com'
-AUTH0_CLIENT_ID='your-client-id'
-AUTH0_CLIENT_SECRET='your-client-secret'
-
-# Slack Configuration
 AUTH0_CLIENT_ID='your-client-id'
 AUTH0_CLIENT_SECRET='your-client-secret'
 
@@ -259,6 +252,7 @@ CRON_SECRET='your-random-secret-key'
 # Edge Config (auto-generated when creating Edge Config)
 EDGE_CONFIG='https://edge-config.vercel.com/...'
 VERCEL_API_TOKEN='your-vercel-api-token'
+VERCEL_TEAM_ID='your-team-id-if-using-team'
 ```
 
 > **Note:** `AUTH0_BASE_URL` is automatically determined in Vercel using `VERCEL_URL` environment variable and works for both custom domains and preview deployments.
@@ -270,9 +264,10 @@ VERCEL_API_TOKEN='your-vercel-api-token'
 Follow the detailed instructions in `EDGE_CONFIG_SETUP.md`:
 
 1. Create Edge Config in Vercel Dashboard
-2. Generate Vercel API token
-3. Initialize data in Edge Config
-4. Verify environment variables
+2. Generate Vercel API token with appropriate permissions
+3. Initialize data structure in Edge Config
+4. Add environment variables to your Vercel project
+5. Verify setup by testing the admin panel
 
 ### 2. Auth0 Setup
 
@@ -284,9 +279,9 @@ To add authorization to the admin panel:
    - `https://your-domain.com/api/auth/callback` (production)
    - `https://*.vercel.app/api/auth/callback` (preview deployments)
 3. Configure Allowed Logout URLs:
-   - `http://localhost:3000` (development)
-   - `https://your-domain.com` (production)
-   - `https://*.vercel.app` (preview deployments)
+   - `http://localhost:3000/admin` (development)
+   - `https://your-domain.com/admin` (production)
+   - `https://*.vercel.app/admin` (preview deployments)
 
 ### 3. Slack Notifications Setup
 
@@ -314,8 +309,8 @@ The service will automatically notify about:
 
 ### Storage
 - **Vercel Edge Config** - Ultra-fast global data store (<1ms reads)
-- **File System** - Local development storage
-- **Hybrid Architecture** - Environment-aware storage switching
+- **REST API Fallback** - SDK with REST API backup for reliability
+- **Global Replication** - Data available across all Vercel edge locations
 
 ### Testing
 - **Vitest** - Fast unit testing framework
