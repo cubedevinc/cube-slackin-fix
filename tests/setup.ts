@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
+process.env.EDGE_CONFIG = 'https://edge-config.vercel.com/test?token=test'
+process.env.VERCEL_API_TOKEN = 'test-token'
+process.env.VERCEL_TEAM_ID = 'test-team'
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),

@@ -50,7 +50,11 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(newData);
-  } catch {
-    return NextResponse.json({ error: 'Error saving data' }, { status: 500 });
+  } catch (error) {
+    console.error('Error in POST /api/invite:', error);
+    return NextResponse.json({
+      error: 'Error saving data',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

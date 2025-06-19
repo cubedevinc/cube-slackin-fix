@@ -8,6 +8,8 @@ import {
   validateSlackInviteLink
 } from '@/lib/invite-utils';
 
+export const dynamic = 'force-dynamic';
+
 async function getActiveInvite(): Promise<InviteData | null> {
   const invite = await readInviteData();
 
