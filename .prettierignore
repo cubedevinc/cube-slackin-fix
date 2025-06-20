@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnpm/
+
+# Production builds
+.next/
+out/
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+
+# Logs
+*.log
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+
+# Vercel
+.vercel/
+
+# Testing
+coverage/
+
+# Miscellaneous
+*.tsbuildinfo

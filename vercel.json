@@ -1,4 +1,5 @@
 {
+  "framework": "nextjs",
   "headers": [
     {
       "source": "/(.*)",
@@ -9,6 +10,11 @@
         }
       ]
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/check-invite",
+      "schedule": "0 9 * * *"
+    }
   ]
 }
-
