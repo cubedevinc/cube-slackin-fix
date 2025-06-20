@@ -3,12 +3,16 @@ export function getBaseUrl(): string {
     return window.location.origin;
   }
 
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+  if (process.env.CUSTOM_DOMAIN) {
+    return `https://${process.env.CUSTOM_DOMAIN}`;
   }
 
   if (process.env.AUTH0_BASE_URL) {
     return process.env.AUTH0_BASE_URL;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
   }
 
   return 'http://localhost:3000';
