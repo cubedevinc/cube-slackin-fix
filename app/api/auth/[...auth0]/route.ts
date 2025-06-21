@@ -5,6 +5,7 @@ export const GET = handleAuth({
     returnTo: '/admin',
     authorizationParams: {
       scope: 'openid profile email',
+      prompt: 'login',
     },
   }),
   logout: handleLogout({
