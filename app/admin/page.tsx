@@ -1,7 +1,8 @@
 'use client';
 
 import { useUser } from '@auth0/nextjs-auth0/client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { InviteData } from '@/lib/invite-utils';
 
 const getDaysLeft = (createdAt: string): number => {
@@ -21,14 +22,18 @@ const getStatusInfo = (invite: InviteData) => {
   return { text: `Active (${daysLeft} days left)`, color: 'text-green-500' };
 };
 
-export default function AdminPanel() {
+function AdminPanelContent() {
   const { user, isLoading } = useUser();
+  const searchParams = useSearchParams();
   const [invite, setInvite] = useState<InviteData | null>(null);
   const [newUrl, setNewUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
   const [message, setMessage] = useState('');
   const [validationMessage, setValidationMessage] = useState('');
+
+  const error = searchParams.get('error');
+  const errorDescription = searchParams.get('error_description');
 
   const fetchInvite = async () => {
     try {
@@ -113,6 +118,15 @@ export default function AdminPanel() {
           <h1 className="mb-4 text-2xl font-bold text-gray-800">
             Authentication Required
           </h1>
+
+          {error === 'access_denied' && (
+            <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3">
+              <p className="text-sm text-red-800">
+                {errorDescription || 'Access denied. Use your cube.dev email.'}
+              </p>
+            </div>
+          )}
+
           <p className="mb-6 text-gray-600">
             Please log in to access the admin panel.
           </p>
@@ -270,5 +284,19 @@ export default function AdminPanel() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminPanel() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-lg">Loading...</div>
+        </div>
+      }
+    >
+      <AdminPanelContent />
+    </Suspense>
   );
 }
