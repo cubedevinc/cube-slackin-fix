@@ -14,15 +14,7 @@ export async function readInviteData(): Promise<InviteData> {
   }
 
   try {
-    try {
-      const data = await get<InviteData>(INVITE_KEY);
-      if (data) {
-        return data;
-      }
-    } catch (sdkError) {
-      console.log('SDK read failed, trying REST API:', sdkError);
-    }
-
+    // Try REST API first to avoid SDK caching issues
     if (process.env.VERCEL_API_TOKEN) {
       try {
         const edgeConfigId = extractEdgeConfigId(process.env.EDGE_CONFIG);
@@ -41,11 +33,23 @@ export async function readInviteData(): Promise<InviteData> {
 
         if (response.ok) {
           const data = await response.json();
-          return data;
+          if (data && data.value) {
+            return data.value; // Extract value from Edge Config response
+          }
         }
       } catch (restError) {
-        console.log('REST API read error:', restError);
+        console.log('REST API read failed, trying SDK:', restError);
       }
+    }
+
+    // Fallback to SDK
+    try {
+      const data = await get<InviteData>(INVITE_KEY);
+      if (data) {
+        return data;
+      }
+    } catch (sdkError) {
+      console.log('SDK read failed:', sdkError);
     }
 
     return {

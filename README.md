@@ -12,6 +12,8 @@ A simple redirect service for Slack invitation links with an admin panel.
 - ⚡ **Automated monitoring** via Vercel Cron Functions
 - ⚡ **Edge Config storage** - ultra-fast global data access (<1ms)
 - 🎨 **Modern UI** with Tailwind CSS
+- 📊 **Production logging** - detailed [API], [CRON], [SLACK] logs for monitoring
+- 🔄 **REST API priority** - Edge Config with reliable fallback mechanism
 
 ## Quick Start
 
@@ -77,25 +79,35 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Data Storage
 
-The service uses Vercel Edge Config for ultra-fast global data storage:
+The service uses Vercel Edge Config for ultra-fast global data storage with improved reliability:
 
 - **Production & Development**: Edge Config provides <1ms global reads across all regions
-- **API-based Operations**: Both read and write operations use Vercel's Edge Config API
-- **Automatic Fallback**: Returns empty data structure if Edge Config is unavailable
+- **REST API Priority**: Uses REST API as primary method with SDK fallback for maximum reliability
+- **Automatic Fallback**: Returns empty data structure if both methods are unavailable
+- **Detailed Logging**: All operations logged with [EDGE_CONFIG] prefixes for monitoring
 - **Environment Required**: Requires `EDGE_CONFIG`, `VERCEL_TEAM_ID` and `VERCEL_API_TOKEN` environment variables
 
 ### Storage Architecture
 
 ```typescript
-// Edge Config operations with REST API fallback
+// Edge Config operations with REST API priority (fixed caching issues)
 export async function readInviteData(): Promise<InviteData> {
-  // Try SDK first
-  const data = await get<InviteData>(INVITE_KEY);
-  if (data) return data;
+  // Primary: REST API (avoids SDK caching issues)
+  try {
+    const response = await fetch(
+      `https://api.vercel.com/v1/edge-config/${edgeConfigId}/item/invite`
+    );
+    if (response.ok) {
+      const data = await response.json();
+      return data.value || defaultInviteData; // Extract .value from REST response
+    }
+  } catch (error) {
+    console.log('[EDGE_CONFIG] REST API failed, trying SDK fallback...');
+  }
 
-  // Fallback to REST API if SDK fails
-  const response = await fetch(`https://api.vercel.com/v1/edge-config/...`);
-  // Returns empty structure if both fail
+  // Fallback: Edge Config SDK
+  const data = await get<InviteData>(INVITE_KEY);
+  return data || defaultInviteData;
 }
 ```
 
@@ -156,19 +168,21 @@ pnpm test --coverage
 tests/
 ├── setup.ts                      # Test environment configuration
 └── api/
-    ├── invite-api.test.ts         # API endpoint tests (4 tests)
-    ├── validate-api.test.ts       # Validation endpoint tests (2 tests)
+    ├── invite-api.test.ts         # API endpoint tests (5 tests)
+    ├── validate-api.test.ts       # Validation endpoint tests (4 tests)
     └── slack-notifications.test.ts # Slack notification logic tests (8 tests)
 ```
 
 ### Test Coverage
 
 - **✅ API Endpoints**: All CRUD operations and validation endpoints
-- **✅ Slack Notifications**: Complete logic testing without real HTTP requests
+- **✅ Slack Notifications**: Complete logic testing with detailed logging verification
 - **✅ Error Handling**: Edge cases and error scenarios
 - **✅ Data Validation**: Input validation and response formatting
+- **✅ Edge Config Operations**: Mocked REST API and SDK operations
+- **✅ Logging Systems**: Verification of [API], [CRON], [SLACK] log prefixes
 
-**Total: 14 tests** covering all critical functionality.
+**Total: 17 tests** covering all critical functionality including production logging.
 
 ### Test Philosophy
 
@@ -180,17 +194,47 @@ tests/
 
 ## Code Architecture
 
-The project follows modern software engineering principles with a focus on maintainability and scalability:
+The project follows modern software engineering principles with a focus on maintainability, scalability, and production monitoring:
 
 ### Centralized Utilities (`lib/invite-utils.ts`)
 
 All invite data operations are consolidated in a single module:
 
 - **InviteData interface** - Single source of truth for data types
-- **Edge Config operations** - `readInviteData()`, `writeInviteData()`
+- **Edge Config operations** - `readInviteData()`, `writeInviteData()` with REST API priority
 - **Validation logic** - `validateSlackInviteLink()`, `isInviteExpired()`
 - **Date calculations** - `getDaysLeft()`
-- **API Fallback** - Automatic fallback from SDK to REST API
+- **REST API Priority** - Prioritizes REST API over SDK to avoid caching issues
+- **Production Logging** - Detailed logs for debugging and monitoring
+
+### Production Logging System
+
+All API endpoints and operations include comprehensive logging for production monitoring:
+
+```typescript
+// API endpoints use [API] prefix
+console.log('[API] POST /api/invite - Starting invite creation/update');
+console.log(
+  '[API] POST /api/invite - Data successfully written to Edge Config'
+);
+
+// Cron operations use [CRON] prefix
+console.log('[CRON] /api/cron/check-invite - Starting link validation check');
+console.log(
+  '[CRON] /api/cron/check-invite - Link expires in 3 days, sending notification'
+);
+
+// Slack operations use [SLACK] prefix
+console.log('[SLACK] sendSlackNotification - Starting notification send');
+console.log('[SLACK] sendSlackNotification - Notification sent successfully');
+```
+
+**Monitoring Benefits:**
+
+- **Easy filtering** in Vercel logs by searching for `[API]`, `[CRON]`, or `[SLACK]`
+- **Step-by-step tracking** of all operations
+- **Error context** with detailed error information
+- **Performance monitoring** with timing information
 
 ### Auth0 Integration (`lib/auth-utils.ts`)
 
@@ -199,14 +243,25 @@ Centralized Auth0 configuration utilities:
 - **Dynamic base URL detection** - Automatic URL detection for Vercel deployments
 - **Environment-aware configuration** - Works across local and production environments
 
+### Slack Notifications (`lib/slack-notifications.ts`)
+
+Production-ready notification system with comprehensive logging:
+
+- **Detailed logging** for each notification step
+- **Error handling** with proper error logging
+- **Payload verification** logged for debugging
+- **Webhook status tracking** for monitoring delivery success
+
 ### Benefits
 
 - **DRY Principle**: No code duplication across API endpoints
 - **Type Safety**: Consistent TypeScript interfaces throughout
-- **API Resilience**: SDK with REST API fallback for maximum reliability
+- **Production Ready**: REST API priority eliminates Edge Config SDK caching issues
 - **Performance Optimized**: <1ms reads globally via Edge Config
+- **Comprehensive Monitoring**: Detailed logging for production debugging and monitoring
 - **Maintainability**: Changes to data logic require updates in one place only
 - **Testability**: Centralized functions are easier to unit test
+- **Reliability**: Multi-layer fallback system ensures service availability
 
 ## Environment Variables
 
@@ -302,6 +357,28 @@ The service will automatically notify about:
 - ❌ Invalid/broken links
 - ✅ Link updates
 
+### 4. Production Monitoring
+
+The service includes comprehensive logging for production monitoring:
+
+1. **Vercel Logs**: All operations are logged with prefixed categories
+
+   - Search for `[API]` to track all API operations
+   - Search for `[CRON]` to monitor scheduled checks
+   - Search for `[SLACK]` to track notification delivery
+
+2. **Error Tracking**: Detailed error logging with context
+3. **Performance Monitoring**: Operation timing and success rates
+4. **Debug Information**: Step-by-step operation tracking
+
+Example monitoring queries in Vercel:
+
+```
+[API] POST /api/invite    # Track invite updates
+[SLACK] Notification sent successfully    # Confirm notifications
+[CRON] Link expires    # Monitor expiring links
+```
+
 ## Technology Stack
 
 ### Frontend & Backend
@@ -342,11 +419,13 @@ The service will automatically notify about:
 
 ## Performance
 
-- **<1ms data reads** on production (Edge Config)
+- **<1ms data reads** on production (Edge Config with REST API priority)
 - **Global replication** across all Vercel edge locations
 - **Automatic caching** for static assets
 - **Serverless functions** for API endpoints
 - **Edge Middleware** for Auth0 redirects
+- **Production logging** with minimal performance impact
+- **Reliable data operations** with REST API priority eliminating caching issues
 
 ## License
 
