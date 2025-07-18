@@ -1,33 +1,38 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-global.fetch = vi.fn();
+// Mock console methods to capture log output
+const mockConsoleLog = vi.fn();
+const mockConsoleError = vi.fn();
 
 describe('Slack Notifications', () => {
-  const mockFetch = global.fetch as any;
-  const originalConsoleWarn = console.warn;
+  const originalConsoleLog = console.log;
   const originalConsoleError = console.error;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // Set up environment
     vi.stubEnv('SLACK_WEBHOOK_URL', 'https://hooks.slack.com/test/webhook');
 
-    console.warn = vi.fn();
-    console.error = vi.fn();
+    // Mock console methods
+    console.log = mockConsoleLog;
+    console.error = mockConsoleError;
 
-    mockFetch.mockResolvedValue({
+    // Mock successful fetch
+    global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
+      json: () => Promise.resolve({ ok: true }),
     });
   });
 
   afterEach(() => {
-    console.warn = originalConsoleWarn;
+    console.log = originalConsoleLog;
     console.error = originalConsoleError;
   });
 
   describe('sendSlackNotification', () => {
-    it('should send notification with correct payload structure', async () => {
+    it('should send notification with correct payload structure and logging', async () => {
       const { sendSlackNotification } = await import(
         '../../lib/slack-notifications'
       );
@@ -41,9 +46,23 @@ describe('Slack Notifications', () => {
       const result = await sendSlackNotification(message, details);
 
       expect(result).toBe(true);
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
 
-      const [url, options] = mockFetch.mock.calls[0];
+      // Check logging
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '[SLACK] sendSlackNotification - Starting notification send'
+      );
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '[SLACK] sendSlackNotification - Message:',
+        message
+      );
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '[SLACK] sendSlackNotification - Details:',
+        details
+      );
+
+      // Check fetch call
+      const [url, options] = (global.fetch as any).mock.calls[0];
       expect(url).toBe('https://hooks.slack.com/test/webhook');
       expect(options.method).toBe('POST');
       expect(options.headers['Content-Type']).toBe('application/json');
@@ -64,9 +83,9 @@ describe('Slack Notifications', () => {
       const result = await sendSlackNotification(message);
 
       expect(result).toBe(true);
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
 
-      const [, options] = mockFetch.mock.calls[0];
+      const [, options] = (global.fetch as any).mock.calls[0];
       const payload = JSON.parse(options.body);
       expect(payload.text).toBe(message);
       expect(payload.blocks).toBeUndefined();
@@ -81,11 +100,14 @@ describe('Slack Notifications', () => {
       const result = await sendSlackNotification('Test');
 
       expect(result).toBe(false);
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '[SLACK] sendSlackNotification - SLACK_WEBHOOK_URL not configured, skipping notification'
+      );
     });
 
     it('should handle fetch errors gracefully', async () => {
-      mockFetch.mockRejectedValue(new Error('Network error'));
+      (global.fetch as any).mockRejectedValue(new Error('Network error'));
 
       const { sendSlackNotification } = await import(
         '../../lib/slack-notifications'
@@ -93,10 +115,14 @@ describe('Slack Notifications', () => {
       const result = await sendSlackNotification('Test');
 
       expect(result).toBe(false);
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        '[SLACK] sendSlackNotification - Error sending notification:',
+        expect.any(Error)
+      );
     });
 
     it('should handle non-ok responses', async () => {
-      mockFetch.mockResolvedValue({
+      (global.fetch as any).mockResolvedValue({
         ok: false,
         status: 400,
         statusText: 'Bad Request',
@@ -108,11 +134,18 @@ describe('Slack Notifications', () => {
       const result = await sendSlackNotification('Test');
 
       expect(result).toBe(false);
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        '[SLACK] sendSlackNotification - Failed to send notification:',
+        {
+          status: 400,
+          statusText: 'Bad Request',
+        }
+      );
     });
   });
 
   describe('SlackNotifications predefined messages', () => {
-    it('should call linkExpired with correct parameters', async () => {
+    it('should call linkExpired with correct parameters and logging', async () => {
       const { SlackNotifications } = await import(
         '../../lib/slack-notifications'
       );
@@ -123,9 +156,12 @@ describe('Slack Notifications', () => {
       );
 
       expect(result).toBe(true);
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '[SLACK] SlackNotifications.linkExpired - Sending expiring link notification'
+      );
 
-      const [, options] = mockFetch.mock.calls[0];
+      const [, options] = (global.fetch as any).mock.calls[0];
       const payload = JSON.parse(options.body);
       expect(payload.text).toContain('Expiring Soon');
       expect(
@@ -138,7 +174,7 @@ describe('Slack Notifications', () => {
       ).toBe(true);
     });
 
-    it('should call linkInvalid with correct parameters', async () => {
+    it('should call linkInvalid with correct parameters and logging', async () => {
       const { SlackNotifications } = await import(
         '../../lib/slack-notifications'
       );
@@ -148,9 +184,12 @@ describe('Slack Notifications', () => {
       );
 
       expect(result).toBe(true);
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '[SLACK] SlackNotifications.linkInvalid - Sending invalid link notification'
+      );
 
-      const [, options] = mockFetch.mock.calls[0];
+      const [, options] = (global.fetch as any).mock.calls[0];
       const payload = JSON.parse(options.body);
       expect(payload.text).toContain('Invalid');
       expect(
@@ -160,7 +199,7 @@ describe('Slack Notifications', () => {
       ).toBe(true);
     });
 
-    it('should call linkUpdated with correct parameters', async () => {
+    it('should call linkUpdated with correct parameters and logging', async () => {
       const { SlackNotifications } = await import(
         '../../lib/slack-notifications'
       );
@@ -170,9 +209,12 @@ describe('Slack Notifications', () => {
       const result = await SlackNotifications.linkUpdated(oldUrl, newUrl);
 
       expect(result).toBe(true);
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '[SLACK] SlackNotifications.linkUpdated - Sending link updated notification'
+      );
 
-      const [, options] = mockFetch.mock.calls[0];
+      const [, options] = (global.fetch as any).mock.calls[0];
       const payload = JSON.parse(options.body);
       expect(payload.text).toContain('Updated');
       expect(
