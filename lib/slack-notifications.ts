@@ -17,12 +17,22 @@ export async function sendSlackNotification(
   message: string,
   details?: Record<string, string>
 ): Promise<boolean> {
+  console.log('[SLACK] sendSlackNotification - Starting notification send');
+  console.log('[SLACK] sendSlackNotification - Message:', message);
+  console.log('[SLACK] sendSlackNotification - Details:', details);
+
   const webhookUrl = process.env.SLACK_WEBHOOK_URL;
 
   if (!webhookUrl) {
-    console.warn('SLACK_WEBHOOK_URL not configured');
+    console.log(
+      '[SLACK] sendSlackNotification - SLACK_WEBHOOK_URL not configured, skipping notification'
+    );
     return false;
   }
+
+  console.log(
+    '[SLACK] sendSlackNotification - Webhook URL configured, proceeding with notification'
+  );
 
   try {
     const payload: SlackMessage = {
@@ -30,6 +40,7 @@ export async function sendSlackNotification(
     };
 
     if (details) {
+      console.log('[SLACK] sendSlackNotification - Adding details to payload');
       payload.blocks = [
         {
           type: 'section',
@@ -48,6 +59,9 @@ export async function sendSlackNotification(
       ];
     }
 
+    console.log(
+      '[SLACK] sendSlackNotification - Sending HTTP request to Slack webhook...'
+    );
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
@@ -57,38 +71,60 @@ export async function sendSlackNotification(
     });
 
     if (!response.ok) {
-      console.error('Failed to send Slack notification:', response.statusText);
+      console.error(
+        '[SLACK] sendSlackNotification - Failed to send notification:',
+        {
+          status: response.status,
+          statusText: response.statusText,
+        }
+      );
       return false;
     }
 
+    console.log(
+      '[SLACK] sendSlackNotification - Notification sent successfully'
+    );
     return true;
   } catch (error) {
-    console.error('Error sending Slack notification:', error);
+    console.error(
+      '[SLACK] sendSlackNotification - Error sending notification:',
+      error
+    );
     return false;
   }
 }
 
 export const SlackNotifications = {
-  linkExpired: (url: string, daysLeft: number) =>
-    sendSlackNotification(`🚨 *Slack Invite Link Expiring Soon*`, {
+  linkExpired: (url: string, daysLeft: number) => {
+    console.log(
+      '[SLACK] SlackNotifications.linkExpired - Sending expiring link notification'
+    );
+    return sendSlackNotification(`🚨 *Slack Invite Link Expiring Soon*`, {
       Link: url,
       'Days Left': daysLeft.toString(),
-      Action:
-        'Please update the invite link in the <http://slack.cube.dev/admin|Admin Panel>',
-    }),
+      Action: 'Please update the invite link in the Admin Panel',
+    });
+  },
 
-  linkInvalid: (url: string) =>
-    sendSlackNotification(`❌ *Slack Invite Link is Invalid*`, {
+  linkInvalid: (url: string) => {
+    console.log(
+      '[SLACK] SlackNotifications.linkInvalid - Sending invalid link notification'
+    );
+    return sendSlackNotification(`❌ *Slack Invite Link is Invalid*`, {
       Link: url,
       Status: 'Link is no longer accessible',
-      Action:
-        'Please update the invite link immediately in the <http://slack.cube.dev/admin|Admin Panel>',
-    }),
+      Action: 'Please update the invite link immediately in the Admin Panel',
+    });
+  },
 
-  linkUpdated: (oldUrl: string, newUrl: string) =>
-    sendSlackNotification(`✅ *Slack Invite Link Updated*`, {
+  linkUpdated: (oldUrl: string, newUrl: string) => {
+    console.log(
+      '[SLACK] SlackNotifications.linkUpdated - Sending link updated notification'
+    );
+    return sendSlackNotification(`✅ *Slack Invite Link Updated*`, {
       'Old Link': oldUrl.substring(0, 50) + '...',
       'New Link': newUrl.substring(0, 50) + '...',
       'Updated By': 'Admin Panel',
-    }),
+    });
+  },
 };
