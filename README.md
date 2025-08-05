@@ -362,7 +362,6 @@ The service will automatically notify about:
 The service includes comprehensive logging for production monitoring:
 
 1. **Vercel Logs**: All operations are logged with prefixed categories
-
    - Search for `[API]` to track all API operations
    - Search for `[CRON]` to monitor scheduled checks
    - Search for `[SLACK]` to track notification delivery
