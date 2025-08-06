@@ -5,10 +5,11 @@ const nextConfig: NextConfig = {
     AUTH0_BASE_URL: process.env.CUSTOM_DOMAIN
       ? `https://${process.env.CUSTOM_DOMAIN}`
       : process.env.AUTH0_BASE_URL ||
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'),
+        (process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : 'http://localhost:3000'),
   },
 };
-
 
 if (process.env.ANALYZE === 'true') {
   const withBundleAnalyzer = require('@next/bundle-analyzer')({
