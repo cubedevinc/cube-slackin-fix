@@ -2,6 +2,12 @@
 
 A simple redirect service for Slack invitation links with an admin panel.
 
+> **Retired.** `slack.cube.dev` is now served by a redirect in
+> [`cubedevinc/cubejs-landing`](https://github.com/cubedevinc/cubejs-landing) (`apps/landing`),
+> and the daily expiry check runs there as a GitHub Actions workflow
+> (`.github/workflows/check-slack-invite.yml`). The Vercel cron that used to
+> alert on this service's own stored link has been removed.
+
 ## Features
 
 - 🚀 **Instant redirect** on the main page
@@ -9,7 +15,6 @@ A simple redirect service for Slack invitation links with an admin panel.
 - ⏰ **30-day TTL** tracking for each link
 - 🔍 **Link validation** - manual and automated checking
 - 📱 **Slack notifications** for expiring/broken links
-- ⚡ **Automated monitoring** via Vercel Cron Functions
 - ⚡ **Edge Config storage** - ultra-fast global data access (<1ms)
 - 🎨 **Modern UI** with Tailwind CSS
 - 📊 **Production logging** - detailed [API], [CRON], [SLACK] logs for monitoring
@@ -65,7 +70,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 │   ├── invite-utils.ts              # Edge Config storage utilities
 │   └── slack-notifications.ts      # Slack notification utilities
 ├── middleware.ts                    # Auth0 redirect middleware
-├── vercel.json                      # Cron job configuration
+├── vercel.json                      # Vercel headers configuration
 └── .env.example                     # Environment variables template
 ```
 
@@ -74,7 +79,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **Admin Panel**: Secure interface for managing invite links with Auth0 authentication
 - **Link Validation**: Manual and automated checking of link accessibility
 - **Slack Notifications**: Automated alerts for expiring/broken links
-- **Cron Jobs**: Daily automated checks via Vercel Cron Functions
 - **Edge Config Storage**: Ultra-fast global data storage on Vercel Edge Network
 
 ## Data Storage
